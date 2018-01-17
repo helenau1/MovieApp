@@ -1,0 +1,183 @@
+
+<HTML>
+<!--Helena Uotila DWA 2017, Project 2 --!>
+ <style type="text/css">
+
+/* css styling of different elements */
+	body{ 
+	font-family:Sans-serif; /* styling the font for the whole page */
+	}
+	#content { /* styling the margins for the content */
+	margin:2em;
+	}
+	
+	select {			
+	margin-right:3em;
+	margin-left:1em;
+	}
+	
+    th, td {	/* styling the table rows */
+    padding:0.5em;
+    text-align:left;
+    border-bottom: 1px solid #2d2d2d;
+    }		
+    
+    .movietitle {	/* styling the text differently in the column where the name of the movie is displayed */
+    font-weight:bold;
+    padding-left:1em;
+    font-size:1.1em;
+   
+    }
+      
+      #welcome {	/* adding a position for the welcome title for the animation purposes */
+      position:absolute;
+      }
+        
+    </style>
+
+</style>
+
+<body>
+<header><img id="pic" src="images/movies.jpeg" alt="movies" style="width:100%; display:none;"></header> <!-- header image of the page. Will be animated with jquery--!>
+
+<div id="content">
+<h2 id ="welcome">Tervetuloa elokuvamaailmaan!</h2> <!-- Welcome title of the page. Will be animated with jquery--!>
+<br>
+<br>
+<br>
+<br>
+  <div style="float:left;">Valitse haluamasi elokuvateatteri listasta <!-- div for dropdown selection--!>
+  <select  name="mySelect" id="theater" onchange="loadData()"> <!-- calling the function to load the right data for each theater --!>
+  <option  value="empty"></option> <!-- adding the possible theaters for the user to select--!>
+    <option  value="kino">Kinopalatsi Helsinki</option><!-- adding the possible theaters for the user to select--!>
+    <option  value="tennis"> Tennispalatsi Helsinki</option>
+    <option  value="omena">Iso Omena Espoo</option>
+    <option  value="sello">Sello Espoo</option>
+  </select></div>
+<div id="searchfield" style="display:none;">Etsi elokuva  <input id="moviesearch" onkeyup="searchMovie()"></input> </div><!--Calling the function to update the search every time the user releases a key on the keyboard. This section is hidden until the user chooses a theater from the theater list. --!>
+<br/>
+<br/>
+<br/>
+<div id="moviedata"></div> <!-- div where all the dynamic data from finnkino xml will be displayed--!>
+
+</div> 
+<script 
+  src="http://code.jquery.com/jquery-3.2.1.js" 
+  integrity="sha256-DZAnKJ/6XZ9si04Hgrsxu/8s717jcIzLy3oi35EouyE="
+  crossorigin="anonymous">  </script> <!--Adding the jquery library --!>
+  <script>
+ //start of the javascript code
+ 
+ $(document).ready(function(){ //Jquery animation effect to the header picture. Changes the opacity
+   $('#pic').fadeIn(3000); 
+ });
+ 
+ $(document).ready(function(){ //jquery animation that works after the page has loaded all the content
+   $("#welcome").mouseenter(function(){
+    $("#welcome").animate({letterSpacing: "+=20px"}, 1000); //animating the welcome text header by changing the letter spacing when the mouse enters the element.
+  });
+  $("#welcome").mouseleave(function(){
+    $("#welcome").animate({letterSpacing: "-=20px"}); //returning back to normal after the mouse leaves
+  });
+});
+
+var url1= "http://www.finnkino.fi/xml/Schedule/?area=1031"; //setting the urls for xml files of different movie theaters
+var url2="http://www.finnkino.fi/xml/Schedule/?area=1033";
+var url3="http://www.finnkino.fi/xml/Schedule/?area=1039";
+var url4="http://www.finnkino.fi/xml/Schedule/?area=1038";
+
+function getData(url) { //function to get the xml data from the finnkino page. The url is determined by the theater that is chosen by the user
+var xmlhttp = new XMLHttpRequest(); //determining the XML request
+           
+            xmlhttp.open("GET", url, true); //starting the connection to get the xml file
+            xmlhttp.send();
+
+            xmlhttp.onreadystatechange = function() { //checking that there are no errors
+                if(xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+                var schedule = xmlhttp.responseXML; //storing the xml data into a variable so that it can be used later
+                
+        var movie = schedule.getElementsByTagName("Title"); //getting the info from the xml file to set as variables and to use for displaying the data. 
+        var genre = schedule.getElementsByTagName("Genres");
+        var picture = schedule.getElementsByTagName("EventSmallImagePortrait");
+        var timetable = schedule.getElementsByTagName("dttmShowStart");
+        var lengthmin = schedule.getElementsByTagName("LengthInMinutes");
+        var rate = schedule.getElementsByTagName("RatingImageUrl")
+        var place = schedule.getElementsByTagName("TheatreAuditorium");   
+             
+   
+    var add = "<table id='movielist'>"; //start of the table
+    add+= "<tr><th></th> <th>Elokuva</th><th>Genre</th> <th>Kesto</th><th>Alkamisaika</th> <th>Sali</th>"; //setting the table headers
+
+    for (var i=0; i < movie.length; i++){ //looping the data from one theater so that each row has the info of a one movie and one show time
+    	
+    	
+		var time = new Date(timetable[i].innerHTML);  //changing the data of the show time from string to datetime so that it can be formatted differently for the table
+        add += '<tr>'; //adding rows to the table
+        add += '<td><img src="'+picture[i].innerHTML+'"></td>'; //adding a picture inside the table
+		add += '<td class="movietitle">' + movie[i].innerHTML + '</td>';
+		add += '<td>' + genre[i].innerHTML + '</td>';
+		add += '<td>' + lengthmin[i].innerHTML+ " min " +'</td>';
+		add += '<td>' + time.toLocaleTimeString([], {hour: "2-digit", minute:"2-digit"})+'</td>'; //changing the format of the datetime to just display the time
+		add += '<td>' + place[i].innerHTML+'</td>';
+        add += '</tr>';
+        
+    }
+	// closing the table
+	add+="</table>";
+
+    // Placing the table to the moviedata div.
+	document.getElementById("moviedata").innerHTML = add;
+	document.getElementById("searchfield").style.display=""; //displaying the search field when a movie theater is chosen
+	document.getElementById("moviesearch").value =""; //clearing the search field when changing the theater
+                
+                }
+            }
+            
+        }
+            
+            
+function loadData() { //function to get the data from the chosen movie theater
+var option = document.getElementById("theater").value;
+if (option=="kino") { //checks the value from the theater lists and gets the data from the corresponding url
+getData(url1);
+}
+if (option=="tennis") { //checks the value from the theater lists and gets the data from the corresponding url
+getData(url2);
+}
+if (option=="omena") { //checks the value from the theater lists and gets the data from the corresponding url
+getData(url3);
+}
+if (option=="sello") { //checks the value from the theater lists and gets the data from the corresponding url
+getData(url4);
+}
+if (option=="empty") {
+document.getElementById("moviedata").innerHTML = "";
+}
+}            
+ 
+
+function searchMovie() { //function to search movies from the table
+  var userinput, word, table, row, td, i; // Declaring variables
+  userinput = document.getElementById("moviesearch"); //determining the input field that should be checked
+  word = userinput.value.toUpperCase(); //getting the input from user
+  table = document.getElementById("movielist"); //determining the table where the movies are searched from
+  row = table.getElementsByTagName("tr"); //determining the row variable
+
+  
+  for (i = 0; i < row.length; i++) { // For loop to go through all the rows from the table
+    td = row[i].getElementsByTagName("td")[0]; //finding each cell
+    if (td) {
+      if (td.innerHTML.toUpperCase().indexOf(word) > -1) { //checking if the text inside the cell matches the word or letter inputted by the user. toUpperCase is used for both the input and the search, so that the search is not case sensitive
+        row[i].style.display = ""; //displaying the rows with that match with the search string
+      } else {
+        row[i].style.display = "none"; //hiding the rows that don't match
+      }
+    } 
+  }
+}
+
+
+
+</script>
+</body>
+</html>
